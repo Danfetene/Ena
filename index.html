@@ -12,33 +12,36 @@
     --font-display:'Fraunces', serif;
     --font-body:'Inter', -apple-system, sans-serif;
     --font-mono:'IBM Plex Mono', monospace;
-    --accent:#4E8FFF;
     --coral:#FF6B52;
     --sage:#4C9A6A;
     --gold:#F2A93B;
-    --blue:#4E8FFF;
+    --blue:#5B8DEF;
     --purple:#C15FFF;
     --teal:#2FBFC4;
     --pink:#FF4FA0;
     --radius:16px;
   }
   html[data-theme="light"]{
-    --bg:#0A1628;
-    --surface:#0F1E36;
-    --surface-2:#152847;
-    --ink:#EDF1FA;
-    --hint:#7C8BA6;
-    --line:rgba(237,241,250,0.09);
-    --accent-ink:#0A1628;
+    --bg: var(--tg-theme-bg-color, #F7F5F0);
+    --surface: var(--tg-theme-secondary-bg-color, #FFFFFF);
+    --surface-2: var(--tg-theme-section-bg-color, #EFEBE2);
+    --ink: var(--tg-theme-text-color, #1C1E21);
+    --hint: var(--tg-theme-hint-color, #8B8F98);
+    --line: rgba(28,30,33,0.09);
+    --accent: var(--tg-theme-button-color, #5B8DEF);
+    --accent-text: var(--tg-theme-button-text-color, #FFFFFF);
+    --accent-ink:#16233F;
   }
   html[data-theme="dark"]{
-    --bg:#0A1628;
-    --surface:#0F1E36;
-    --surface-2:#152847;
-    --ink:#EDF1FA;
-    --hint:#7C8BA6;
-    --line:rgba(237,241,250,0.09);
-    --accent-ink:#0A1628;
+    --bg: var(--tg-theme-bg-color, #14171C);
+    --surface: var(--tg-theme-secondary-bg-color, #1C2027);
+    --surface-2: var(--tg-theme-section-bg-color, #242933);
+    --ink: var(--tg-theme-text-color, #EDEEF1);
+    --hint: var(--tg-theme-hint-color, #8B93A1);
+    --line: rgba(237,238,241,0.09);
+    --accent: var(--tg-theme-button-color, #6C9BFF);
+    --accent-text: var(--tg-theme-button-text-color, #FFFFFF);
+    --accent-ink:#16233F;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   body{
@@ -161,12 +164,12 @@
   .sheet-actions{display:flex; gap:10px; margin-top:22px;}
   .btn{flex:1; text-align:center; padding:15px 0; border-radius:13px; font-size:15px; font-weight:700; border:none; cursor:pointer;}
   .btn-cancel{background:var(--surface-2); color:var(--ink);}
-  .btn-save{background:var(--accent); color:#fff;}
+  .btn-save{background:var(--accent); color:var(--accent-text);}
 
   .fab{
     position:fixed; right:20px; bottom:calc(20px + env(safe-area-inset-bottom)); width:56px; height:56px; border-radius:50%;
-    background:var(--accent); color:#fff; border:none; display:flex; align-items:center; justify-content:center;
-    box-shadow:0 6px 18px rgba(78,143,255,0.35); cursor:pointer; z-index:5; transition:transform .15s ease;
+    background:var(--accent); color:var(--accent-text); border:none; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 18px rgba(91,141,239,0.35); cursor:pointer; z-index:5; transition:transform .15s ease;
   }
   .fab:active{transform:scale(0.93);}
   .fab svg{width:23px; height:23px;}
@@ -274,10 +277,10 @@
   var tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
   if(tg){ tg.ready(); tg.expand(); }
 
-  var HABIT_COLORS = ['#4E8FFF'];
-  var PRIO_COLORS = { low:'#7C8BA6', med:'#4E8FFF', high:'#FF6B52' };
-  var RING_STOPS = ['#1B3A66','#4E8FFF'];
-  var HEAT_STOPS = ['#152847','#2C4C82','#3E6FBE','#4E8FFF'];
+  var HABIT_COLORS = ['#5B8DEF','#4C9A6A','#F2A93B','#FF6B52','#2FBFC4','#C15FFF'];
+  var PRIO_COLORS = { low:'#4C9A6A', med:'#F2A93B', high:'#FF6B52' };
+  var RING_STOPS = ['#4C9A6A','#5B8DEF'];
+  var HEAT_STOPS = ['#2A3A55','#3F5C8A','#4E77C2','#5B8DEF'];
 
   /* ---------- theme ---------- */
   function applyTheme(){
@@ -286,7 +289,7 @@
     else if(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches){ scheme = 'dark'; }
     document.documentElement.setAttribute('data-theme', scheme);
     if(tg){
-      var bg = '#0A1628';
+      var bg = (tg.themeParams && tg.themeParams.bg_color) ? tg.themeParams.bg_color : (scheme === 'dark' ? '#14171C' : '#F7F5F0');
       try{ tg.setHeaderColor(bg); tg.setBackgroundColor(bg); }catch(e){}
     }
   }
@@ -544,10 +547,10 @@
       if(map[fmtKey(d)]) activeDays++;
     }
     var tiles = [
-      { num: totalDone, label:'Tasks completed all-time', bg:'rgba(78,143,255,0.10)', fg:'#4E8FFF' },
-      { num: data.habits.length, label:'Habits being tracked', bg:'rgba(78,143,255,0.10)', fg:'#4E8FFF' },
-      { num: bestHabit ? (bestStreak+'d') : '—', label: bestHabit ? ('Best streak · '+bestHabit.title) : 'Best streak', bg:'rgba(78,143,255,0.10)', fg:'#4E8FFF' },
-      { num: activeDays+'/7', label:'Active days this week', bg:'rgba(78,143,255,0.10)', fg:'#4E8FFF' }
+      { num: totalDone, label:'Tasks completed all-time', bg:'rgba(76,154,106,0.12)', fg:'#4C9A6A' },
+      { num: data.habits.length, label:'Habits being tracked', bg:'rgba(91,141,239,0.12)', fg:'#5B8DEF' },
+      { num: bestHabit ? (bestStreak+'d') : '—', label: bestHabit ? ('Best streak · '+bestHabit.title) : 'Best streak', bg:'rgba(242,169,59,0.12)', fg:'#F2A93B' },
+      { num: activeDays+'/7', label:'Active days this week', bg:'rgba(47,191,196,0.12)', fg:'#2FBFC4' }
     ];
     grid.innerHTML = tiles.map(function(t){
       return '<div class="stat-tile" style="--tile-bg:'+t.bg+'; --tile-fg:'+t.fg+'"><div class="stat-num">'+t.num+'</div><div class="stat-label">'+t.label+'</div></div>';
