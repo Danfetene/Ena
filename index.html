@@ -1,1257 +1,558 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ET Water Market • Mini App</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    :root {
-      --tg-bg-color: #f0f0f0;
-      --tg-text-color: #000;
-      --tg-hint-color: #999;
-      --tg-button-color: #5288c1;
-      --tg-button-text-color: #fff;
-      --accent: #2e7d32;
-      --danger: #d32f2f;
-      --chat-bg: #ffffff;
-      --chat-bubble-user: #e2f7cb;
-      --chat-bubble-bot: #f1f0f0;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Ledger — Tasks & Habits</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500;1,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --font-display:'Fraunces', serif;
+    --font-body:'Inter', -apple-system, sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+    --accent:#B9CC3F;
+    --coral:#FF6B52;
+    --sage:#4C9A6A;
+    --radius:16px;
+  }
+  html[data-theme="light"]{
+    --bg:#FAF9F5;
+    --surface:#FFFFFF;
+    --surface-2:#F1EFE7;
+    --ink:#1B2430;
+    --hint:#7A8194;
+    --line:rgba(27,36,48,0.09);
+    --accent-ink:#2C3417;
+  }
+  html[data-theme="dark"]{
+    --bg:#12161C;
+    --surface:#1A1F27;
+    --surface-2:#20262F;
+    --ink:#ECEAE2;
+    --hint:#8A93A3;
+    --line:rgba(236,234,226,0.09);
+    --accent-ink:#1B2430;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--font-body);
+    padding-bottom:96px;
+    min-height:100vh;
+    transition:background .2s ease;
+  }
+  .wrap{max-width:520px; margin:0 auto; padding:20px 18px 8px;}
 
-    body.dark {
-      --tg-bg-color: #17212b;
-      --tg-text-color: #f0f0f0;
-      --tg-hint-color: #aaa;
-      --chat-bg: #24303f;
-      --chat-bubble-user: #2b5278;
-      --chat-bubble-bot: #182533;
-    }
+  /* Header */
+  .greeting{font-family:var(--font-display); font-style:italic; font-weight:500; font-size:15px; color:var(--hint); margin:0 0 2px;}
+  .date{font-family:var(--font-display); font-weight:600; font-size:26px; margin:0 0 20px; letter-spacing:-0.01em;}
 
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--tg-bg-color);
-      color: var(--tg-text-color);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      transition: background 0.3s, color 0.3s;
-    }
+  .ring-row{display:flex; align-items:center; gap:18px; margin-bottom:24px;}
+  .ring-wrap{position:relative; width:104px; height:104px; flex-shrink:0;}
+  .ring-wrap svg{width:100%; height:100%;}
+  .tick{stroke:var(--line); stroke-width:2.6; stroke-linecap:round; transition:stroke .25s ease;}
+  .tick.filled{stroke:var(--accent);}
+  .ring-center{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+  .ring-num{font-family:var(--font-mono); font-size:19px; font-weight:500;}
+  .ring-label{font-family:var(--font-display); font-style:italic; font-size:11px; color:var(--hint); margin-top:1px;}
+  .ring-copy{flex:1;}
+  .ring-copy .h{font-weight:600; font-size:15px; margin:0 0 4px;}
+  .ring-copy .p{font-size:13px; color:var(--hint); margin:0; line-height:1.45;}
 
-    header {
-      background: var(--tg-button-color);
-      color: var(--tg-button-text-color);
-      padding: 14px 16px;
-      text-align: center;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    }
-    header h1 { font-size: 22px; margin: 0; }
-    .moto { font-size: 14px; opacity: 0.9; }
+  /* Tabs */
+  .tabs{display:flex; background:var(--surface-2); border-radius:12px; padding:3px; margin-bottom:18px;}
+  .tab{flex:1; text-align:center; padding:9px 0; font-size:14px; font-weight:600; border-radius:10px; cursor:pointer; color:var(--hint); user-select:none;}
+  .tab.active{background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,0.06);}
 
-    .main-content-wrapper {
-      flex: 1;
-    }
+  /* List */
+  .list{display:flex; flex-direction:column; gap:10px;}
+  .empty{padding:36px 12px; text-align:center;}
+  .empty .e-title{font-family:var(--font-display); font-style:italic; font-size:17px; margin:0 0 6px;}
+  .empty .e-body{font-size:13px; color:var(--hint); margin:0;}
 
-    .top-controls {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px 8px;
-      background: var(--tg-bg-color);
-      position: sticky;
-      top: 56px;
-      z-index: 9;
-      border-bottom: 1px solid rgba(0,0,0,0.06);
-    }
+  .card{background:var(--surface); border-radius:var(--radius); padding:14px 14px; display:flex; align-items:flex-start; gap:12px; border:1px solid var(--line);}
+  .check{
+    width:22px; height:22px; border-radius:50%; border:2px solid var(--line); flex-shrink:0; margin-top:1px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; transition:.15s ease;
+  }
+  .check.done{background:var(--sage); border-color:var(--sage);}
+  .check svg{width:12px; height:12px; opacity:0; transition:.15s ease;}
+  .check.done svg{opacity:1;}
+  .card-body{flex:1; min-width:0;}
+  .card-title{font-size:14.5px; font-weight:500; line-height:1.35; word-break:break-word;}
+  .card-title.done{text-decoration:line-through; color:var(--hint);}
+  .meta-row{display:flex; align-items:center; gap:8px; margin-top:5px;}
+  .prio-dot{width:7px; height:7px; border-radius:50%; flex-shrink:0;}
+  .prio-low{background:var(--sage);}
+  .prio-med{background:#D8A93B;}
+  .prio-high{background:var(--coral);}
+  .due{font-family:var(--font-mono); font-size:11px; color:var(--hint);}
+  .due.overdue{color:var(--coral);}
+  .del{width:26px; height:26px; flex-shrink:0; border:none; background:transparent; color:var(--hint); cursor:pointer; opacity:.6; display:flex; align-items:center; justify-content:center;}
+  .del svg{width:15px; height:15px;}
 
-    .search-bar {
-      flex: 1;
-      background: var(--tg-bg-color);
-      border: 1px solid var(--tg-hint-color);
-      border-radius: 12px;
-      padding: 10px 14px;
-      display: flex;
-      align-items: center;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-      min-width: 0;
-    }
-    .search-bar input {
-      background: transparent;
-      border: none;
-      flex: 1;
-      font-size: 16px;
-      color: var(--tg-text-color);
-      outline: none;
-      min-width: 0;
-    }
+  /* Habit card */
+  .habit-top{display:flex; align-items:center; justify-content:space-between; width:100%;}
+  .streak{display:flex; align-items:baseline; gap:4px; font-family:var(--font-mono); font-size:12px; color:var(--hint);}
+  .streak b{color:var(--accent-ink); background:var(--accent); padding:1px 6px; border-radius:8px; font-size:11.5px;}
+  .ribbon{display:flex; gap:6px; margin-top:10px;}
+  .dot{width:100%; aspect-ratio:1; border-radius:8px; background:var(--surface-2); border:1px solid var(--line); cursor:pointer; display:flex; align-items:center; justify-content:center; position:relative;}
+  .dot.on{background:var(--accent); border-color:var(--accent);}
+  .dot.today{box-shadow:0 0 0 2px var(--ink) inset;}
+  .dot-label{position:absolute; bottom:-16px; font-family:var(--font-mono); font-size:9px; color:var(--hint); left:50%; transform:translateX(-50%);}
+  .habit-row{flex-direction:column; align-items:stretch;}
+  .ribbon-wrap{margin-top:2px; padding-bottom:14px;}
 
-    .filter-wrapper {
-      flex-shrink: 0;
-    }
-    .filter-wrapper select {
-      background: var(--tg-bg-color);
-      color: var(--tg-text-color);
-      border: 1px solid var(--tg-hint-color);
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 14px;
-      max-width: 160px;
-      cursor: pointer;
-    }
+  /* Sheet */
+  .backdrop{position:fixed; inset:0; background:rgba(10,12,16,0.45); opacity:0; pointer-events:none; transition:.2s ease; z-index:10;}
+  .backdrop.show{opacity:1; pointer-events:auto;}
+  .sheet{
+    position:fixed; left:0; right:0; bottom:0; background:var(--surface);
+    border-radius:22px 22px 0 0; padding:20px 20px calc(20px + env(safe-area-inset-bottom));
+    transform:translateY(105%); transition:transform .28s cubic-bezier(.32,.72,0,1); z-index:11;
+    max-width:520px; margin:0 auto;
+  }
+  .sheet.show{transform:translateY(0);}
+  .sheet-title{font-family:var(--font-display); font-weight:600; font-size:19px; margin:0 0 16px;}
+  .field-label{font-size:12px; font-weight:600; color:var(--hint); text-transform:uppercase; letter-spacing:.03em; margin:14px 0 6px;}
+  .field-label:first-of-type{margin-top:0;}
+  input[type="text"], input[type="date"]{
+    width:100%; border:1px solid var(--line); background:var(--surface-2); color:var(--ink);
+    border-radius:10px; padding:11px 12px; font-size:14.5px; font-family:var(--font-body); outline:none;
+  }
+  input[type="text"]:focus, input[type="date"]{border-color:var(--hint);}
+  .pill-row{display:flex; gap:8px;}
+  .pill{flex:1; text-align:center; padding:9px 0; border-radius:10px; border:1px solid var(--line); font-size:13px; font-weight:600; color:var(--hint); cursor:pointer;}
+  .pill.sel-low.sel{background:var(--sage); color:#fff; border-color:var(--sage);}
+  .pill.sel-med.sel{background:#D8A93B; color:#fff; border-color:#D8A93B;}
+  .pill.sel-high.sel{background:var(--coral); color:#fff; border-color:var(--coral);}
+  .sheet-actions{display:flex; gap:10px; margin-top:20px;}
+  .btn{flex:1; text-align:center; padding:13px 0; border-radius:12px; font-size:14.5px; font-weight:600; border:none; cursor:pointer;}
+  .btn-cancel{background:var(--surface-2); color:var(--ink);}
+  .btn-save{background:var(--ink); color:var(--bg);}
 
-    .categories {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
-      gap: 12px;
-      padding: 16px;
-      background: var(--tg-bg-color);
-    }
-
-    .category-tile {
-      background: var(--tg-bg-color);
-      border-radius: 16px;
-      padding: 12px 8px;
-      text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      cursor: pointer;
-      transition: transform 0.18s, box-shadow 0.18s;
-    }
-    .category-tile:active { transform: scale(0.94); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-    .category-tile img {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-bottom: 8px;
-    }
-    .category-tile span {
-      font-size: 13px;
-      display: block;
-    }
-
-    .brand-section {
-      display: none;
-      padding: 16px 16px 120px;
-      background: var(--tg-bg-color);
-      margin: 0;
-    }
-    .brand-section.active {
-      display: block;
-    }
-
-    .brand-header {
-      font-size: 24px;
-      font-weight: 700;
-      margin-bottom: 24px;
-      color: var(--tg-button-color);
-      text-align: center;
-    }
-
-    .variant {
-      background: rgba(82,136,193,0.08);
-      border: 1px solid rgba(82,136,193,0.2);
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .variant-info { flex: 1; }
-    .variant-size { font-size: 18px; font-weight: 600; }
-    .variant-price { font-size: 22px; color: var(--accent); font-weight: bold; }
-
-    .order-btn {
-      background: var(--tg-button-color);
-      color: var(--tg-button-text-color);
-      border: none;
-      border-radius: 12px;
-      padding: 12px 28px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.15s, opacity 0.2s;
-      min-width: 110px;
-    }
-    .order-btn:active {
-      transform: scale(0.96);
-      opacity: 0.92;
-    }
-
-    .nutrition {
-      margin-top: 32px;
-      padding: 20px;
-      background: rgba(46,125,50,0.08);
-      border-radius: 16px;
-      border: 1px solid rgba(46,125,50,0.2);
-    }
-    .nutrition h3 {
-      margin: 0 0 16px;
-      color: var(--accent);
-      font-size: 18px;
-      text-align: center;
-    }
-    .nutrition-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 15px;
-    }
-    .nutrition-table td {
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(0,0,0,0.08);
-    }
-    .nutrition-table td:first-child { font-weight: 500; }
-    .nutrition-table td:last-child {
-      text-align: right;
-      color: var(--tg-button-color);
-      font-weight: 600;
-    }
-
-    #cart-summary {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      background: var(--tg-bg-color);
-      border-top: 1px solid rgba(0,0,0,0.08);
-      padding: 20px 16px 16px;
-      box-shadow: 0 -8px 24px rgba(0,0,0,0.12);
-      transform: translateY(100%);
-      transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-      z-index: 100;
-      border-radius: 20px 20px 0 0;
-    }
-    #cart-summary.visible { transform: translateY(0); }
-
-    #cart-items { 
-      list-style: none; 
-      margin: 8px 0 16px; 
-      max-height: 280px; 
-      overflow-y: auto; 
-    }
-    .cart-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 14px 0;
-      border-bottom: 1px solid rgba(0,0,0,0.05);
-    }
-    .cart-item-details {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      flex: 1;
-      padding-right: 8px;
-    }
-    .cart-item-title {
-      font-size: 15px;
-      font-weight: 600;
-    }
-    .cart-item-subtitle {
-      font-size: 13px;
-      color: var(--tg-hint-color);
-    }
-    .cart-item-actions {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    .cart-qty-controls {
-      display: flex;
-      align-items: center;
-      background: rgba(82, 136, 193, 0.08);
-      border-radius: 30px;
-      padding: 2px;
-    }
-    .qty-btn {
-      width: 32px;
-      height: 32px;
-      border: none;
-      border-radius: 50%;
-      font-size: 18px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      background: var(--tg-bg-color);
-      color: var(--tg-text-color);
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-      transition: transform 0.1s;
-    }
-    .qty-btn:active { transform: scale(0.9); }
-    
-    .qty-input {
-      width: 38px;
-      border: none;
-      background: transparent;
-      text-align: center;
-      font-weight: 700;
-      font-size: 15px;
-      color: var(--tg-text-color);
-      outline: none;
-      -moz-appearance: textfield;
-    }
-    .qty-input::-webkit-outer-spin-button,
-    .qty-input::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-
-    #total {
-      font-weight: 800;
-      text-align: right;
-      font-size: 20px;
-      margin: 12px 0 8px;
-      padding-top: 14px;
-      border-top: 1px solid rgba(0,0,0,0.08);
-      color: var(--tg-text-color);
-    }
-
-    #empty { text-align: center; color: var(--tg-hint-color); padding: 48px 0; font-size: 16px; }
-    #no-results {
-      display: none;
-      text-align: center;
-      padding: 40px 20px;
-      color: var(--tg-hint-color);
-      font-size: 16px;
-      background: var(--tg-bg-color);
-      margin: 0 16px 16px;
-      border-radius: 16px;
-    }
-
-    .footer {
-      text-align: center;
-      padding: 24px 16px 100px 16px;
-      color: var(--tg-hint-color);
-      font-size: 14px;
-      background: rgba(0,0,0,0.03);
-      border-top: 1px solid rgba(0,0,0,0.08);
-      margin-top: auto;
-    }
-
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.6);
-      z-index: 200;
-      display: none;
-      align-items: flex-end;
-      justify-content: center;
-    }
-    .modal-overlay.visible { display: flex; }
-    
-    .modal-content {
-      background: var(--tg-bg-color);
-      width: 100%;
-      max-width: 480px;
-      border-radius: 24px 24px 0 0;
-      padding: 24px;
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
-      animation: slideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1) forwards;
-    }
-    
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
-    }
-    
-    .modal-content h2 { margin: 0 0 8px; color: var(--tg-text-color); font-size: 22px; }
-    .modal-content p { margin: 0 0 20px; color: var(--tg-hint-color); font-size: 14px; }
-    
-    .input-group { margin-bottom: 16px; }
-    .input-group label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: var(--tg-text-color); }
-    .input-group input {
-      width: 100%; 
-      padding: 14px; 
-      border: 1px solid var(--tg-hint-color);
-      border-radius: 12px; 
-      background: transparent; 
-      color: var(--tg-text-color);
-      font-size: 16px; 
-      font-family: inherit;
-      box-sizing: border-box;
-    }
-    .input-group input:focus {
-      outline: 2px solid var(--tg-button-color); 
-      border-color: transparent;
-    }
-    
-    .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
-    .modal-actions button {
-      flex: 1; padding: 14px; border: none; border-radius: 12px; 
-      font-size: 16px; font-weight: bold; cursor: pointer; transition: opacity 0.2s;
-    }
-    .modal-actions button:active { opacity: 0.8; }
-    .cancel-btn { background: rgba(211,47,47,0.12); color: var(--danger); }
-    .submit-btn { background: var(--tg-button-color); color: var(--tg-button-text-color); }
-
-    /* --- ASSISTANT FLOATING WORKSPACE --- */
-    .chat-fab {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background: var(--tg-button-color);
-      color: var(--tg-button-text-color);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-      cursor: pointer;
-      z-index: 90;
-      font-size: 24px;
-      transition: transform 0.2s;
-    }
-    .chat-fab:active { transform: scale(0.9); }
-
-    .chat-window {
-      position: fixed;
-      bottom: 85px;
-      right: 20px;
-      width: calc(100% - 40px);
-      max-width: 360px;
-      height: 450px;
-      background: var(--chat-bg);
-      border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-      display: none;
-      flex-direction: column;
-      z-index: 95;
-      overflow: hidden;
-      border: 1px solid rgba(0,0,0,0.08);
-    }
-    .chat-window.open { display: flex; }
-
-    .chat-header {
-      background: var(--tg-button-color);
-      color: var(--tg-button-text-color);
-      padding: 12px 16px;
-      font-weight: bold;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .chat-header span { font-size: 16px; }
-    .chat-close { cursor: pointer; font-size: 20px; font-weight: 300; }
-
-    .chat-messages {
-      flex: 1;
-      padding: 14px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .msg {
-      max-width: 80%;
-      padding: 10px 14px;
-      border-radius: 14px;
-      font-size: 14px;
-      line-height: 1.4;
-      word-wrap: break-word;
-    }
-    .msg.user {
-      align-self: flex-end;
-      background: var(--chat-bubble-user);
-      color: #000;
-      border-bottom-right-radius: 2px;
-    }
-    body.dark .msg.user { color: #fff; }
-    
-    .msg.bot {
-      align-self: flex-start;
-      background: var(--chat-bubble-bot);
-      color: var(--tg-text-color);
-      border-bottom-left-radius: 2px;
-    }
-
-    .msg.typing-indicator {
-      font-style: italic;
-      color: var(--tg-hint-color);
-      opacity: 0.85;
-    }
-    
-    .chat-input-area {
-      padding: 10px;
-      border-top: 1px solid rgba(0,0,0,0.08);
-      display: flex;
-      gap: 8px;
-      background: var(--chat-bg);
-    }
-    .chat-input-area input {
-      flex: 1;
-      border: 1px solid var(--tg-hint-color);
-      background: transparent;
-      color: var(--tg-text-color);
-      border-radius: 20px;
-      padding: 8px 14px;
-      font-size: 14px;
-      outline: none;
-    }
-    .chat-send-btn {
-      background: var(--tg-button-color);
-      color: var(--tg-button-text-color);
-      border: none;
-      border-radius: 50%;
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    @media (min-width: 500px) {
-      body { max-width: 480px; margin: 0 auto; }
-      .chat-window { right: calc(50% - 220px); }
-      .chat-fab { right: calc(50% - 220px); }
-    }
-  </style>
+  .fab{
+    position:fixed; right:20px; bottom:calc(20px + env(safe-area-inset-bottom)); width:54px; height:54px; border-radius:50%;
+    background:var(--ink); color:var(--bg); border:none; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 18px rgba(0,0,0,0.22); cursor:pointer; z-index:5;
+  }
+  .fab svg{width:22px; height:22px;}
+  section{display:none;}
+  section.active{display:block;}
+</style>
 </head>
 <body>
+<div class="wrap">
+  <p class="greeting" id="greeting">Good day</p>
+  <h1 class="date" id="dateLabel"></h1>
 
-  <div class="main-content-wrapper">
-    <header>
-      <h1 id="header-title">ET Water Market (+350 Agents)</h1>
-      <div class="moto">To your need • Addis Ababa delivery</div>
-    </header>
-
-    <div class="top-controls">
-      <div class="search-bar">
-        <input id="searchInput" type="text" placeholder="Search brands" />
-      </div>
-      <div class="filter-wrapper">
-        <select id="sortFilter">
-          <option value="default">Filter by</option>
-          <option value="price-low-high">Price: Low</option>
-        </select>
+  <div class="ring-row">
+    <div class="ring-wrap">
+      <svg viewBox="0 0 104 104" id="ringSvg"></svg>
+      <div class="ring-center">
+        <div class="ring-num" id="ringNum">0/0</div>
+        <div class="ring-label">today</div>
       </div>
     </div>
-
-    <div class="categories" id="categories"></div>
-    
-    <div id="brands-container"></div>
-
-    <div id="no-results">No brands found</div>
-  </div>
-
-  <div id="cart-summary">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-      <h2 style="margin:0; font-size:20px; font-weight: 700;">Your Order</h2>
-    </div>
-    <ul id="cart-items"></ul>
-    <div id="total">Total: 0 Birr</div>
-    <div id="empty">Cart is empty – pick your water! 💧</div>
-  </div>
-
-  <div id="checkout-modal" class="modal-overlay">
-    <div class="modal-content">
-      <h2>Order Form</h2>
-      <p>Please insert your delivery information below.</p>
-      
-      <div class="input-group">
-        <label>1. Delivery Address</label>
-        <input type="text" id="order-address" placeholder="Sub-city, Woreda, specific location..." />
-      </div>
-
-      <div class="input-group">
-        <label>2. Phone Number</label>
-        <input type="tel" id="order-phone" placeholder="e.g., 0912345678" />
-      </div>
-      
-      <div class="modal-actions">
-        <button class="cancel-btn" id="cancel-order">Cancel</button>
-        <button class="submit-btn" id="confirm-order">OK</button>
-      </div>
+    <div class="ring-copy">
+      <p class="h" id="ringHeadline">Nothing due yet</p>
+      <p class="p" id="ringSub">Add a task or a habit to start today's ledger.</p>
     </div>
   </div>
 
-  <!-- FLOATING CONVERSATIONAL ASSISTANT -->
-  <div class="chat-fab" id="chatFab">💬</div>
-  
-  <div class="chat-window" id="chatWindow">
-    <div class="chat-header">
-      <span>Water Support AI</span>
-      <span class="chat-close" id="chatClose">×</span>
-    </div>
-    <div class="chat-messages" id="chatMessages">
-      <div class="msg bot">Hello! I am your ET Water assistant. Ask me anything about our 17 water brands, distribution channels, delivery options in Addis Ababa, or how to register as a water agent! 💧</div>
-    </div>
-    <div class="chat-input-area">
-      <input type="text" id="chatInput" placeholder="Ask about products, agents..." />
-      <button class="chat-send-btn" id="chatSendBtn">➔</button>
-    </div>
+  <div class="tabs">
+    <div class="tab active" data-tab="tasks">Tasks</div>
+    <div class="tab" data-tab="habits">Habits</div>
   </div>
 
-  <div class="footer">
-    Contact for requests / delivery in Addis Ababa<br>
-    <strong style="color:var(--tg-button-color); font-size:16px;">0984748168</strong>
+  <section id="tasksSection" class="active">
+    <div class="list" id="tasksList"></div>
+  </section>
+
+  <section id="habitsSection">
+    <div class="list" id="habitsList"></div>
+  </section>
+</div>
+
+<button class="fab" id="fab" aria-label="Add">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+<div class="backdrop" id="backdrop"></div>
+<div class="sheet" id="sheet">
+  <h2 class="sheet-title" id="sheetTitle">New task</h2>
+
+  <div class="field-label">Title</div>
+  <input type="text" id="titleInput" placeholder="What needs doing?" maxlength="120">
+
+  <div id="taskFields">
+    <div class="field-label">Priority</div>
+    <div class="pill-row" id="prioRow">
+      <div class="pill sel-low sel" data-p="low">Low</div>
+      <div class="pill sel-med" data-p="med">Medium</div>
+      <div class="pill sel-high" data-p="high">High</div>
+    </div>
+    <div class="field-label">Due date <span style="text-transform:none; font-weight:400;">(optional)</span></div>
+    <input type="date" id="dueInput">
   </div>
 
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
-    tg.enableClosingConfirmation();
+  <div class="sheet-actions">
+    <button class="btn btn-cancel" id="cancelBtn">Cancel</button>
+    <button class="btn btn-save" id="saveBtn">Save</button>
+  </div>
+</div>
 
-    tg.MainButton.setParams({
-      text: 'Checkout',
-      color: tg.themeParams.button_color || '#00b140',
-      text_color: tg.themeParams.button_text_color || '#ffffff'
-    });
-    tg.MainButton.hide();
-    
-    tg.BackButton.show();
+<script>
+(function(){
+  "use strict";
+  var tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+  if(tg){ tg.ready(); tg.expand(); }
 
-    const BOT_TOKEN = '8557040338:AAGT7VyhxhfbMi6ETnJdPsNzefGwr_LFKJI';
-    const TARGET_CHAT_ID = '421868479';
-
-    function applyTheme() {
-      const isDark = tg.colorScheme === 'dark';
-      document.body.classList.toggle('dark', isDark);
-
-      const params = tg.themeParams;
-      document.documentElement.style.setProperty('--tg-bg-color', params.bg_color || (isDark ? '#17212b' : '#f0f0f0'));
-      document.documentElement.style.setProperty('--tg-text-color', params.text_color || (isDark ? '#f0f0f0' : '#000'));
-      document.documentElement.style.setProperty('--tg-hint-color', params.hint_color || (isDark ? '#aaa' : '#999'));
-      document.documentElement.style.setProperty('--tg-button-color', params.button_color || '#5288c1');
-      document.documentElement.style.setProperty('--tg-button-text-color', params.button_text_color || '#fff');
-
-      tg.MainButton.setParams({
-        color: params.button_color,
-        text_color: params.button_text_color
-      });
+  /* ---------- theme ---------- */
+  function applyTheme(){
+    var scheme = 'light';
+    if(tg && tg.colorScheme){ scheme = tg.colorScheme; }
+    else if(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches){ scheme = 'dark'; }
+    document.documentElement.setAttribute('data-theme', scheme);
+    if(tg){
+      var bg = scheme === 'dark' ? '#12161C' : '#FAF9F5';
+      try{ tg.setHeaderColor(bg); tg.setBackgroundColor(bg); }catch(e){}
     }
-    applyTheme();
-    tg.onEvent('themeChanged', applyTheme);
+  }
+  applyTheme();
+  if(tg && tg.onEvent){ tg.onEvent('themeChanged', applyTheme); }
 
-    const defaultVariants = [
-      {size:'0.3L', price:140}, 
-      {size:'0.6L', price:150}, 
-      {size:'1L', price:155}, 
-      {size:'2L', price:160}
-    ];
-    const defaultNutrition = [{label:'Calcium', val:'0.4 mg/L'}, {label:'Magnesium', val:'1.3 mg/L'}, {label:'Sodium', val:'2.3 mg/L'}, {label:'TDS', val:'20 mg/L'}];
+  function haptic(type){
+    if(!tg || !tg.HapticFeedback) return;
+    if(type === 'success' || type === 'error' || type === 'warning'){ tg.HapticFeedback.notificationOccurred(type); }
+    else { tg.HapticFeedback.impactOccurred(type || 'light'); }
+  }
 
-    const brands = [
-      {
-        id: 'gold', name: 'Gold', img: 'https://i.postimg.cc/nr7cPzVK/gold-w.webp', brandDisplay: 'Gold Water / Agents',
-        variants: defaultVariants,
-        nutrition: [{label:'TDS', val:'8.5 mg/L'}, {label:'Calcium', val:'1.6 mg/L'}, {label:'Magnesium', val:'0.8 mg/L'}, {label:'Potassium', val:'8.5 mg/L'}, {label:'Sodium', val:'0.9 mg/L'}]
-      },
-      { id: 'top', name: 'Top', img: 'https://i.postimg.cc/4dGs4htb/top.webp', brandDisplay: 'Top Water / Agents', variants: defaultVariants, nutrition: defaultNutrition },
-      { id: 'africa', name: 'Africa', img: 'https://i.postimg.cc/0NGB7hR3/africa.jpg', brandDisplay: 'Africa Water / Agents', variants: defaultVariants, nutrition: defaultNutrition },
-      { id: 'aquaddis', name: 'Aquaddis', img: 'https://i.postimg.cc/dVD0gdmt/aquaddis.webp', brandDisplay: 'Aquaddis / Agents', variants: defaultVariants, nutrition: defaultNutrition },
-      { id: 'one', name: 'One', img: 'https://i.postimg.cc/Vvf49NBk/one-water.jpg', brandDisplay: 'One Water / Agents', variants: defaultVariants, nutrition: defaultNutrition },
-      { id: 'yes', name: 'Yes', img: 'https://i.postimg.cc/rw1JHWnJ/yes.webp', brandDisplay: 'Yes Water / Agents', variants: defaultVariants, nutrition: defaultNutrition },
-      { id: 'dega', name: 'Dega', img: 'https://i.postimg.cc/9FG86vz9/dega.webp', brandDisplay: 'Dega Water / Agents', variants: defaultVariants, nutrition: defaultNutrition },
-      { id: 'arki', name: 'Arki', img: 'https://i.postimg.cc/TwDqrDDf/arki.webp', brandDisplay: 'Arki Water / Agents', variants: defaultVariants, nutrition: defaultNutrition },
-      { id: 'forest', name: 'Forest', img: 'https://i.postimg.cc/bYFW3tJV/forest.webp', brandDisplay: 'Forest Water / Agents', variants: defaultVariants, nutrition: defaultNutrition },
-      { id: 'kiya', name: 'Kiya', img: 'https://i.postimg.cc/TYMSzXV0/kiya.webp', brandDisplay: 'Kiya Water / Agents', variants: defaultVariants, nutrition: defaultNutrition },
-      { id: 'sport', name: 'Sport', img: 'https://i.postimg.cc/9McHHHH5/sport.webp', brandDisplay: 'Sport Water / Agents', variants: defaultVariants, nutrition: defaultNutrition },
-      { id: 'fham', name: 'Fham', img: 'https://i.postimg.cc/wjqVSMCp/fham.jpg', brandDisplay: 'Fham Water / Agents', variants: defaultVariants, nutrition: defaultNutrition },
-      { id: 'care', name: 'Care', img: 'https://i.postimg.cc/15NtYv7K/care.webp', brandDisplay: 'Care Water / Agents', variants: defaultVariants, nutrition: defaultNutrition },
-      { id: 'wow', name: 'Wow', img: 'https://i.postimg.cc/Gh1fD2DQ/wow.webp', brandDisplay: 'Wow Water / Agents', variants: defaultVariants, nutrition: defaultNutrition },
-      { id: 'konjo', name: 'Konjo', img: 'https://i.postimg.cc/gkYDd68Y/konjo.jpg', brandDisplay: 'Konjo Water / Agents', variants: defaultVariants, nutrition: defaultNutrition },
-      { id: 'eden', name: 'Eden', img: 'https://i.postimg.cc/xCnkHL01/eden.webp', brandDisplay: 'Eden Water / Agents', variants: defaultVariants, nutrition: defaultNutrition },
-      { id: 'share', name: 'Share', img: 'https://via.placeholder.com/64?text=Share', brandDisplay: 'Share Water / Agents', variants: defaultVariants, nutrition: defaultNutrition }
-    ];
-
-    const categoriesEl = document.getElementById('categories');
-    const brandsContainer = document.getElementById('brands-container');
-
-    brands.forEach(brand => {
-      const minPrice = Math.min(...brand.variants.map(v => v.price));
-
-      const tile = document.createElement('div');
-      tile.className = 'category-tile';
-      tile.setAttribute('data-brand-id', brand.id);
-      tile.setAttribute('data-min-price', minPrice);
-      tile.innerHTML = `
-        <img src="${brand.img}" alt="${brand.name}" loading="lazy">
-        <span>${brand.name}</span>
-      `;
-      tile.addEventListener('click', () => showBrand(brand.id));
-      categoriesEl.appendChild(tile);
-
-      const section = document.createElement('div');
-      section.id = `${brand.id}-section`;
-      section.className = 'brand-section';
-
-      let variantsHTML = '';
-      brand.variants.forEach(v => {
-        variantsHTML += `
-          <div class="variant">
-            <div class="variant-info">
-              <div class="variant-size">${v.size}/Pack</div>
-              <div class="variant-price">${v.price} Birr</div>
-            </div>
-            <button class="order-btn" data-brand="${brand.brandDisplay}" data-size="${v.size}" data-price="${v.price}">Order</button>
-          </div>`;
-      });
-
-      let nutritionHTML = '';
-      if (brand.nutrition?.length) {
-        nutritionHTML = `
-          <div class="nutrition">
-            <h3>Nutrition Facts (per liter)</h3>
-            <table class="nutrition-table">
-              ${brand.nutrition.map(n => `<tr><td>${n.label}</td><td>${n.val}</td></tr>`).join('')}
-            </table>
-          </div>`;
-      }
-
-      section.innerHTML = `
-        <div class="brand-header">${brand.brandDisplay}</div>
-        ${variantsHTML}
-        ${nutritionHTML}
-      `;
-
-      brandsContainer.appendChild(section);
-    });
-
-    let cart = JSON.parse(localStorage.getItem('etWaterCart')) || [];
-
-    function saveCart() {
-      localStorage.setItem('etWaterCart', JSON.stringify(cart));
-    }
-
-    function addToCart(brand, size, price) {
-      const key = `${brand}|${size}`;
-      const existing = cart.find(i => `${i.brand}|${i.size}` === key);
-      if (existing) {
-        existing.qty++;
-      } else {
-        cart.push({ brand, size, price, qty: 1 });
-      }
-      saveCart();
-      renderCart();
-      tg.HapticFeedback.impactOccurred('medium');
-    }
-
-    function changeQty(index, delta) {
-      cart[index].qty += delta;
-      if (cart[index].qty <= 0) cart.splice(index, 1);
-      saveCart();
-      renderCart();
-      tg.HapticFeedback.impactOccurred('light');
-    }
-
-    function renderCart() {
-      const list = document.getElementById('cart-items');
-      const totalEl = document.getElementById('total');
-      const emptyEl = document.getElementById('empty');
-      const summary = document.getElementById('cart-summary');
-
-      list.innerHTML = '';
-      let total = 0;
-
-      if (cart.length === 0) {
-        emptyEl.style.display = 'block';
-        totalEl.textContent = 'Total: 0 Birr';
-        summary.classList.remove('visible');
-        tg.MainButton.hide();
-        return;
-      }
-
-      emptyEl.style.display = 'none';
-      summary.classList.add('visible');
-
-      cart.forEach((item, i) => {
-        const lineItemTotal = item.price * (item.qty || 0);
-        total += lineItemTotal;
-
-        const li = document.createElement('li');
-        li.className = 'cart-item';
-        
-        li.innerHTML = `
-          <div class="cart-item-details">
-            <span class="cart-item-title">${item.brand}</span>
-            <span class="cart-item-subtitle">${item.size}/Pack • ${item.price} Birr</span>
-          </div>
-          <div class="cart-item-actions">
-            <div class="cart-qty-controls">
-              <button class="qty-btn qty-minus" data-index="${i}" data-delta="-1">−</button>
-              <input type="number" class="qty-input" data-index="${i}" value="${item.qty === 0 ? '' : item.qty}" min="1">
-              <button class="qty-btn qty-plus" data-index="${i}" data-delta="1">+</button>
-            </div>
-          </div>
-        `;
-        list.appendChild(li);
-      });
-
-      totalEl.textContent = `Total: ${total} Birr`;
-      tg.MainButton.setText(`Checkout • ${total} Birr`);
-      tg.MainButton.show();
-    }
-
-    function recalculateTotalInstantly() {
-      let total = 0;
-      const inputs = document.querySelectorAll('.qty-input');
-      
-      inputs.forEach(input => {
-        const index = Number(input.dataset.index);
-        let val = parseInt(input.value, 10);
-        if (isNaN(val) || val < 0) val = 0;
-        
-        cart[index].qty = val;
-        total += cart[index].price * val;
-      });
-
-      document.getElementById('total').textContent = `Total: ${total} Birr`;
-      tg.MainButton.setText(`Checkout • ${total} Birr`);
-    }
-
-    let previousView = 'main';
-    let lastBrandId = null;
-
-    function showBrand(id) {
-      previousView = 'brand';
-      lastBrandId = id;
-
-      document.querySelector('.top-controls').style.display = 'none';
-      document.querySelector('.categories').style.display = 'none';
-      document.getElementById('no-results').style.display = 'none';
-
-      document.querySelectorAll('.brand-section').forEach(el => el.classList.remove('active'));
-      const section = document.getElementById(`${id}-section`);
-      if (section) section.classList.add('active');
-
-      tg.BackButton.show();
-      tg.HapticFeedback.impactOccurred('light');
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    }
-
-    function returnToMainView() {
-      previousView = 'main';
-      lastBrandId = null;
-
-      document.querySelectorAll('.brand-section').forEach(el => el.classList.remove('active'));
-      document.querySelector('.top-controls').style.display = 'flex';
-      document.querySelector('.categories').style.display = 'grid';
-      document.getElementById('no-results').style.display = 'none';
-
-      tg.BackButton.show();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      tg.HapticFeedback.impactOccurred('light');
-    }
-
-    function returnToLastBrand() {
-      if (lastBrandId) {
-        document.querySelectorAll('.brand-section').forEach(el => el.classList.remove('active'));
-        const section = document.getElementById(`${lastBrandId}-section`);
-        if (section) section.classList.add('active');
-
-        document.querySelector('.top-controls').style.display = 'none';
-        document.querySelector('.categories').style.display = 'none';
-        tg.BackButton.show();
-      } else {
-        returnToMainView();
-      }
-    }
-
-    tg.BackButton.onClick(() => {
-      const cartIsVisible = document.getElementById('cart-summary').classList.contains('visible');
-      const modalIsVisible = document.getElementById('checkout-modal').classList.contains('visible');
-
-      if (modalIsVisible) {
-        cart = [];
-        saveCart();
-        renderCart();
-        document.getElementById('checkout-modal').classList.remove('visible');
-        document.getElementById('cart-summary').classList.remove('visible');
-        tg.MainButton.hide();
-        returnToLastBrand();
-      } else if (cartIsVisible) {
-        cart = [];
-        saveCart();
-        renderCart();
-        document.getElementById('cart-summary').classList.remove('visible');
-        tg.MainButton.hide();
-        returnToLastBrand();
-      } else if (previousView === 'brand') {
-        returnToMainView();
-      } else if (previousView === 'main') {
-        tg.close();
-      }
-
-      tg.HapticFeedback.impactOccurred('light');
-    });
-
-    document.addEventListener('click', e => {
-      const t = e.target;
-
-      if (t.classList.contains('order-btn')) {
-        const { brand, size, price } = t.dataset;
-        addToCart(brand, size, Number(price));
-      }
-
-      if (t.classList.contains('qty-minus') || t.classList.contains('qty-plus')) {
-        const index = Number(t.dataset.index);
-        const delta = Number(t.dataset.delta);
-        if (!isNaN(index)) changeQty(index, delta);
-      }
-    });
-
-    document.addEventListener('input', e => {
-      const t = e.target;
-      if (t.classList.contains('qty-input')) {
-        recalculateTotalInstantly();
-      }
-    });
-
-    document.addEventListener('change', e => {
-      const t = e.target;
-      if (t.classList.contains('qty-input')) {
-        const index = Number(t.dataset.index);
-        let newQty = parseInt(t.value, 10);
-        
-        if (isNaN(newQty) || newQty <= 0) {
-          cart.splice(index, 1);
+  /* ---------- storage ---------- */
+  var DATA_KEY = 'ledger_data_v1';
+  var Storage = {
+    isTG: !!(tg && tg.CloudStorage),
+    get: function(key){
+      var self = this;
+      return new Promise(function(resolve){
+        if(self.isTG){
+          tg.CloudStorage.getItem(key, function(err, value){ resolve(err ? null : value); });
         } else {
-          cart[index].qty = newQty;
+          try{ resolve(localStorage.getItem(key)); }catch(e){ resolve(null); }
         }
-        
-        saveCart();
-        renderCart();
-        tg.HapticFeedback.impactOccurred('light');
-      }
-    });
-
-    document.getElementById('sortFilter').addEventListener('change', e => {
-      const value = e.target.value;
-      const tiles = Array.from(document.querySelectorAll('.category-tile'));
-      const container = document.getElementById('categories');
-
-      if (value === 'price-low-high') {
-        tiles.sort((a, b) => {
-          const pA = parseInt(a.getAttribute('data-min-price') || '9999', 10);
-          const pB = parseInt(b.getAttribute('data-min-price') || '9999', 10);
-          return pA - pB;
-        });
-        tiles.forEach(tile => container.appendChild(tile));
-      } else {
-        brands.forEach(brand => {
-          const tile = document.querySelector(`[data-brand-id="${brand.id}"]`);
-          if (tile) container.appendChild(tile);
-        });
-      }
-    });
-
-    let searchTimeout;
-    document.getElementById('searchInput').addEventListener('input', e => {
-      clearTimeout(searchTimeout);
-      searchTimeout = setTimeout(() => {
-        const q = e.target.value.toLowerCase().trim();
-        const tiles = document.querySelectorAll('.category-tile');
-        let visible = 0;
-
-        tiles.forEach(tile => {
-          const name = tile.querySelector('span').textContent.toLowerCase();
-          const show = name.includes(q) || ['140','150','155','160'].some(p => q.includes(p));
-          tile.style.display = show ? '' : 'none';
-          if (show) visible++;
-        });
-
-        document.getElementById('no-results').style.display =
-          (q && visible === 0) ? 'block' : 'none';
-      }, 280);
-    });
-
-    const checkoutModal = document.getElementById('checkout-modal');
-    
-    tg.MainButton.onClick(() => {
-      if (!cart.length) return;
-      checkoutModal.classList.add('visible');
-      tg.MainButton.hide();
-    });
-
-    document.getElementById('cancel-order').addEventListener('click', () => {
-      cart = [];
-      saveCart();
-      renderCart();
-      checkoutModal.classList.remove('visible');
-      document.getElementById('cart-summary').classList.remove('visible');
-      tg.MainButton.hide();
-      returnToLastBrand();
-    });
-
-    document.getElementById('confirm-order').addEventListener('click', async () => {
-      const phoneInput = document.getElementById('order-phone');
-      const addressInput = document.getElementById('order-address');
-      const confirmBtn = document.getElementById('confirm-order');
-
-      const phone = phoneInput.value.trim();
-      const address = addressInput.value.trim();
-
-      if (!address) {
-        tg.showAlert("Please insert a delivery address.");
-        return;
-      }
-      if (!phone || phone.length < 9) {
-        tg.showAlert("Please insert a valid phone number.");
-        return;
-      }
-      
-      if (phone.length > 10) {
-        tg.showAlert("Order cancelled: Phone number cannot be more than 10 digits.");
-        return;
-      }
-
-      confirmBtn.disabled = true;
-      confirmBtn.textContent = "Processing...";
-
-      let itemsText = "";
-      let total = 0;
-
-      cart.forEach(i => {
-        const line = i.price * i.qty;
-        total += line;
-        itemsText += `• ${i.brand} ${i.size} × ${i.qty} = ${line} Birr\n`;
       });
-
-      const message = 
-`🛒 New Water Order – Order Form
-📍 Address: ${address}
-📞 Phone: ${phone}
-
-Items:
-${itemsText}
-────────────────────
-💰 Total: ${total} Birr`;
-
-      try {
-        const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: TARGET_CHAT_ID,
-            text: message,
-            parse_mode: 'Markdown'
-          })
-        });
-
-        const data = await res.json();
-
-        if (data.ok) {
-          tg.showAlert("Thank you for your order!", () => {
-            checkoutModal.classList.remove('visible');
-            
-            phoneInput.value = "";
-            addressInput.value = "";
-            
-            cart = [];
-            saveCart();
-            renderCart();
-            document.getElementById('cart-summary').classList.remove('visible');
-            
-            returnToMainView();
-          });
+    },
+    set: function(key, value){
+      var self = this;
+      return new Promise(function(resolve){
+        if(self.isTG){
+          tg.CloudStorage.setItem(key, value, function(err, ok){ resolve(!err); });
         } else {
-          tg.showAlert("Failed to route order.\nError: " + (data.description || "Unknown"));
-        }
-      } catch (err) {
-        tg.showAlert("Network connection error. Check connectivity and try again.");
-      } finally {
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = "OK";
-      }
-    });
-
-    /* --- INTENT-SCORING ENGINE WITH MEMORY WORKSPACE --- */
-    const chatFab = document.getElementById('chatFab');
-    const chatWindow = document.getElementById('chatWindow');
-    const chatClose = document.getElementById('chatClose');
-    const chatInput = document.getElementById('chatInput');
-    const chatSendBtn = document.getElementById('chatSendBtn');
-    const chatMessages = document.getElementById('chatMessages');
-
-    // Conversation tracking parameters
-    let botMemory = {
-      lastBrand: "",
-      askedAboutPrice: false,
-      askedAboutDelivery: false
-    };
-
-    chatFab.addEventListener('click', () => {
-      chatWindow.classList.toggle('open');
-      if (chatWindow.classList.contains('open')) {
-        chatInput.focus();
-        scrollToBottom();
-      }
-      tg.HapticFeedback.impactOccurred('light');
-    });
-
-    chatClose.addEventListener('click', () => {
-      chatWindow.classList.remove('open');
-      tg.HapticFeedback.impactOccurred('light');
-    });
-
-    function appendMessage(text, sender, isIndicator = false) {
-      const msgDiv = document.createElement('div');
-      msgDiv.className = `msg ${sender}${isIndicator ? ' typing-indicator' : ''}`;
-      msgDiv.textContent = text;
-      chatMessages.appendChild(msgDiv);
-      scrollToBottom();
-      return msgDiv;
-    }
-
-    function scrollToBottom() {
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    }
-
-    async function handleSendMessage() {
-      const query = chatInput.value.trim();
-      if (!query) return;
-
-      appendMessage(query, 'user');
-      chatInput.value = '';
-      tg.HapticFeedback.impactOccurred('light');
-
-      // Append typing state animation placeholder node
-      const typingNode = appendMessage('Typing...', 'bot', true);
-
-      setTimeout(() => {
-        chatMessages.removeChild(typingNode);
-        const reply = generateSmartLocalReply(query);
-        appendMessage(reply, 'bot');
-      }, 700);
-    }
-
-    chatSendBtn.addEventListener('click', handleSendMessage);
-    chatInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') handleSendMessage();
-    });
-
-    function generateSmartLocalReply(input) {
-      const text = input.toLowerCase().trim();
-      
-      // Dynamic Brand Extraction Lookups
-      const brandsList = ['gold', 'top', 'africa', 'aquaddis', 'one', 'yes', 'dega', 'arki', 'forest', 'kiya', 'sport', 'fham', 'care', 'wow', 'konjo', 'eden', 'share'];
-      let foundBrand = brandsList.find(b => text.includes(b));
-      
-      if (foundBrand) {
-        botMemory.lastBrand = foundBrand.charAt(0).toUpperCase() + foundBrand.slice(1);
-      }
-
-      // Context Match Scoring Intent Objects Array
-      const intents = [
-        {
-          name: 'greeting',
-          keywords: ['hi', 'hello', 'hey', 'greetings', 'selam', 'sup', 'morning', 'afternoon', 'evening'],
-          responses: [
-            "Hello! How can I help you with your water order today? 💧",
-            "Hi there! Looking for fast water delivery in Addis Ababa?",
-            "Selam! I'm your ET Water virtual assistant. What can I do for you today?",
-            "Hey! Feel free to ask me anything about our 17 water brands, pricing, or delivery."
-          ]
-        },
-        {
-          name: 'pricing',
-          keywords: ['price', 'cost', 'birr', 'expensive', 'cheap', 'how much', 'wholesale', 'payment'],
-          responses: [
-            "Our wholesale prices generally range from 140 Birr to 160 Birr per pack depending on the bottle size.",
-            "Prices range between 140-160 Birr. You can tap any brand's icon in the main app menu to see its exact up-to-date case pricing!"
-          ]
-        },
-        {
-          name: 'delivery',
-          keywords: ['delivery', 'deliver', 'where', 'location', 'place', 'address', 'bole', 'addis', 'woreda', 'subcity'],
-          responses: [
-            "We deliver absolutely anywhere across Addis Ababa! Our 350+ dispatch agents handle routes daily.",
-            "Just add your items to the cart, hit 'Checkout', and type your location. The nearest available agent will bring it to your door."
-          ]
-        },
-        {
-          name: 'agent',
-          keywords: ['agent', 'join', 'become', 'work', 'job', 'distribute', 'sell'],
-          responses: [
-            "Want to join our network? We have over 350 active distribution agents in Addis. Apply directly by calling our central desk at 0984748168.",
-            "For agent applications, wholesale partnerships, or job inquiries, please call our team directly at 0984748168."
-          ]
-        },
-        {
-          name: 'contact',
-          keywords: ['contact', 'call', 'phone', 'number', 'support', 'help', 'talk', 'human'],
-          responses: [
-            "You can reach our human support and dispatch team directly at 0984748168.",
-            "Need immediate assistance? Give us a call at 0984748168 and we'll resolve it right away!"
-          ]
-        },
-        {
-          name: 'gratitude',
-          keywords: ['thanks', 'thank you', 'cool', 'great', 'ok', 'okay', 'perfect', 'awesome'],
-          responses: [
-            "You're very welcome! Let me know if you want to add anything else to your cart. 😊",
-            "Anytime! I'm here if you have more questions.",
-            "Awesome! Ready to deliver whenever you submit your order. 💙"
-          ]
-        }
-      ];
-
-      let bestIntent = null;
-      let highestScore = 0;
-
-      intents.forEach(intent => {
-        let score = 0;
-        intent.keywords.forEach(keyword => {
-          if (text.includes(keyword)) {
-            score += 1;
-            if (new RegExp(`\\b${keyword}\\b`).test(text)) score += 1;
-          }
-        });
-
-        if (score > highestScore) {
-          highestScore = score;
-          bestIntent = intent;
+          try{ localStorage.setItem(key, value); }catch(e){}
+          resolve(true);
         }
       });
-
-      // Evaluation Path A: Direct active Brand reference extraction context match
-      if (foundBrand) {
-        const brandName = botMemory.lastBrand;
-        if (bestIntent && bestIntent.name === 'pricing') {
-          return `Excellent choice with ${brandName}! Cases of ${brandName} run within our standard 140–160 Birr wholesale tier. Tap the ${brandName} icon above to lock in your order!`;
-        }
-        return `Ah, ${brandName} water! We stock it in 0.3L, 0.6L, 1L, and 2L sizes. Would you like us to arrange a delivery pack for you?`;
-      }
-
-      // Evaluation Path B: Passive tracking memory state context retrieval match
-      if (bestIntent && botMemory.lastBrand !== "") {
-        const rememberedBrand = botMemory.lastBrand;
-        if (bestIntent.name === 'pricing' && !botMemory.askedAboutPrice) {
-          botMemory.askedAboutPrice = true;
-          return `Speaking of ${rememberedBrand}, our bulk orders go for 140 to 160 Birr per case. Click its icon above to see the exact price layout for it!`;
-        }
-        if (bestIntent.name === 'delivery' && !botMemory.askedAboutDelivery) {
-          botMemory.askedAboutDelivery = true;
-          return `Yes, we can absolutely deliver your ${rememberedBrand} water anywhere in Addis Ababa. Just enter your location at checkout!`;
-        }
-      }
-
-      // Evaluation Path C: Fallback to standard weighted key matching pool choice
-      if (bestIntent && highestScore > 0) {
-        return bestIntent.responses[Math.floor(Math.random() * bestIntent.responses.length)];
-      }
-
-      // Evaluation Path D: Abstract randomized conversation recovery arrays
-      const fallbacks = [
-        "I'm optimized for ET Water info! Try asking me about our 17 brands, batch pricing, or how delivery works in Addis Ababa.",
-        "I didn't quite process that phrasing. If you're looking to order, click the water icons above or call support at 0984748168.",
-        "Hmm, I'm unsure about that one. Could you ask differently? I can help with pricing tiers, delivery lookups, and agent setups!",
-        "I'm still sharpening my conversational skills! 😅 If you need a human right away, feel free to give us a ring at 0984748168."
-      ];
-      
-      return fallbacks[Math.floor(Math.random() * fallbacks.length)];
     }
+  };
 
-    renderCart();
-  </script>
+  var data = { tasks: [], habits: [] };
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  function fmtKey(d){
+    var y=d.getFullYear(), m=('0'+(d.getMonth()+1)).slice(-2), day=('0'+d.getDate()).slice(-2);
+    return y+'-'+m+'-'+day;
+  }
+  var TODAY = new Date();
+  var TODAY_KEY = fmtKey(TODAY);
+
+  function saveData(){ Storage.set(DATA_KEY, JSON.stringify(data)); }
+
+  function loadData(){
+    return Storage.get(DATA_KEY).then(function(raw){
+      if(raw){
+        try{ data = JSON.parse(raw); }catch(e){ data = {tasks:[], habits:[]}; }
+      }
+      if(!data.tasks) data.tasks = [];
+      if(!data.habits) data.habits = [];
+    });
+  }
+
+  /* ---------- header ---------- */
+  function renderHeader(){
+    var hour = new Date().getHours();
+    var g = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    document.getElementById('greeting').textContent = g;
+    document.getElementById('dateLabel').textContent = TODAY.toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' });
+  }
+
+  /* ---------- ring ---------- */
+  var TICKS = 30;
+  function buildRing(){
+    var svg = document.getElementById('ringSvg');
+    var cx=52, cy=52, rOuter=46, rInner=38;
+    var html = '';
+    for(var i=0;i<TICKS;i++){
+      var a = (i / TICKS) * Math.PI * 2 - Math.PI/2;
+      var x1 = cx + rInner*Math.cos(a), y1 = cy + rInner*Math.sin(a);
+      var x2 = cx + rOuter*Math.cos(a), y2 = cy + rOuter*Math.sin(a);
+      html += '<line class="tick" data-i="'+i+'" x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>';
+    }
+    svg.innerHTML = html;
+  }
+
+  function renderRing(){
+    var tasksDueToday = data.tasks.filter(function(t){ return t.due === TODAY_KEY && !t.done; }).length +
+                         data.tasks.filter(function(t){ return t.due === TODAY_KEY && t.done; }).length;
+    var tasksDoneToday = data.tasks.filter(function(t){ return t.due === TODAY_KEY && t.done; }).length;
+    var habitsTotal = data.habits.length;
+    var habitsDone = data.habits.filter(function(h){ return h.history[TODAY_KEY]; }).length;
+
+    var total = tasksDueToday + habitsTotal;
+    var done = tasksDoneToday + habitsDone;
+    var ratio = total > 0 ? done/total : 0;
+    var filled = Math.round(ratio * TICKS);
+
+    document.querySelectorAll('.tick').forEach(function(t){
+      var i = parseInt(t.getAttribute('data-i'),10);
+      t.classList.toggle('filled', i < filled);
+    });
+    document.getElementById('ringNum').textContent = done + '/' + total;
+
+    var headline = document.getElementById('ringHeadline');
+    var sub = document.getElementById('ringSub');
+    if(total === 0){
+      headline.textContent = 'Nothing due yet';
+      sub.textContent = 'Add a task or a habit to start today\'s ledger.';
+    } else if(done === total){
+      headline.textContent = 'Today is closed out';
+      sub.textContent = 'Every task and habit for today is checked off.';
+    } else {
+      headline.textContent = (total-done) + ' left for today';
+      sub.textContent = 'Tap a task or a habit\'s dot to mark it done.';
+    }
+  }
+
+  /* ---------- tasks ---------- */
+  function renderTasks(){
+    var list = document.getElementById('tasksList');
+    if(data.tasks.length === 0){
+      list.innerHTML = '<div class="empty"><p class="e-title">The page is blank</p><p class="e-body">Add your first task and it will show up here.</p></div>';
+      return;
+    }
+    var sorted = data.tasks.slice().sort(function(a,b){
+      if(a.done !== b.done) return a.done ? 1 : -1;
+      var ad = a.due || '9999', bd = b.due || '9999';
+      if(ad !== bd) return ad < bd ? -1 : 1;
+      return b.createdAt - a.createdAt;
+    });
+    list.innerHTML = sorted.map(function(t){
+      var overdue = t.due && t.due < TODAY_KEY && !t.done;
+      var dueLabel = '';
+      if(t.due){
+        var dd = new Date(t.due + 'T00:00:00');
+        dueLabel = dd.toLocaleDateString(undefined, {month:'short', day:'numeric'});
+      }
+      return '<div class="card" data-id="'+t.id+'">'
+        + '<div class="check '+(t.done?'done':'')+'" data-action="toggle" data-id="'+t.id+'">'
+        + '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg></div>'
+        + '<div class="card-body">'
+        + '<div class="card-title '+(t.done?'done':'')+'">'+escapeHtml(t.title)+'</div>'
+        + '<div class="meta-row"><span class="prio-dot prio-'+t.priority+'"></span>'
+        + (dueLabel ? '<span class="due '+(overdue?'overdue':'')+'">'+dueLabel+(overdue?' · overdue':'')+'</span>' : '<span class="due">no due date</span>')
+        + '</div></div>'
+        + '<button class="del" data-action="delete-task" data-id="'+t.id+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M9 6V4h6v2m-8 0l1 14h8l1-14"/></svg></button>'
+        + '</div>';
+    }).join('');
+  }
+
+  /* ---------- habits ---------- */
+  function last7Days(){
+    var arr = [];
+    for(var i=6;i>=0;i--){
+      var d = new Date(TODAY);
+      d.setDate(d.getDate()-i);
+      arr.push(d);
+    }
+    return arr;
+  }
+  function streakFor(habit){
+    var count=0, d=new Date(TODAY);
+    if(!habit.history[fmtKey(d)]){ d.setDate(d.getDate()-1); }
+    while(habit.history[fmtKey(d)]){
+      count++;
+      d.setDate(d.getDate()-1);
+    }
+    return count;
+  }
+  function renderHabits(){
+    var list = document.getElementById('habitsList');
+    if(data.habits.length === 0){
+      list.innerHTML = '<div class="empty"><p class="e-title">No habits tracked</p><p class="e-body">Add one and check it off day by day to build a streak.</p></div>';
+      return;
+    }
+    var days = last7Days();
+    var sorted = data.habits.slice().sort(function(a,b){ return b.createdAt - a.createdAt; });
+    list.innerHTML = sorted.map(function(h){
+      var streak = streakFor(h);
+      var dots = days.map(function(d){
+        var key = fmtKey(d);
+        var on = !!h.history[key];
+        var isToday = key === TODAY_KEY;
+        var label = d.toLocaleDateString(undefined, {weekday:'narrow'});
+        return '<div class="dot '+(on?'on':'')+' '+(isToday?'today':'')+'" data-action="toggle-habit" data-id="'+h.id+'" data-day="'+key+'"><span class="dot-label">'+label+'</span></div>';
+      }).join('');
+      return '<div class="card habit-row" data-id="'+h.id+'">'
+        + '<div class="habit-top"><div class="card-title">'+escapeHtml(h.title)+'</div>'
+        + '<div style="display:flex; align-items:center; gap:8px;">'
+        + '<div class="streak">'+(streak>0 ? '<b>'+streak+' day'+(streak===1?'':'s')+'</b>' : 'no streak yet')+'</div>'
+        + '<button class="del" data-action="delete-habit" data-id="'+h.id+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M9 6V4h6v2m-8 0l1 14h8l1-14"/></svg></button>'
+        + '</div></div>'
+        + '<div class="ribbon-wrap"><div class="ribbon">'+dots+'</div></div>'
+        + '</div>';
+    }).join('');
+  }
+
+  function escapeHtml(s){
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function renderAll(){
+    renderHeader();
+    renderTasks();
+    renderHabits();
+    renderRing();
+  }
+
+  /* ---------- tabs ---------- */
+  var activeTab = 'tasks';
+  document.querySelectorAll('.tab').forEach(function(el){
+    el.addEventListener('click', function(){
+      activeTab = el.getAttribute('data-tab');
+      document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('active', t===el); });
+      document.getElementById('tasksSection').classList.toggle('active', activeTab==='tasks');
+      document.getElementById('habitsSection').classList.toggle('active', activeTab==='habits');
+      haptic('light');
+    });
+  });
+
+  /* ---------- list actions (delegated) ---------- */
+  document.addEventListener('click', function(e){
+    var toggle = e.target.closest('[data-action="toggle"]');
+    if(toggle){
+      var id = toggle.getAttribute('data-id');
+      var t = data.tasks.find(function(x){ return x.id===id; });
+      if(t){
+        t.done = !t.done;
+        saveData(); renderTasks(); renderRing();
+        haptic(t.done ? 'success' : 'light');
+      }
+      return;
+    }
+    var delTask = e.target.closest('[data-action="delete-task"]');
+    if(delTask){
+      var idd = delTask.getAttribute('data-id');
+      data.tasks = data.tasks.filter(function(x){ return x.id !== idd; });
+      saveData(); renderTasks(); renderRing();
+      haptic('light');
+      return;
+    }
+    var togHabit = e.target.closest('[data-action="toggle-habit"]');
+    if(togHabit){
+      var hid = togHabit.getAttribute('data-id');
+      var day = togHabit.getAttribute('data-day');
+      var h = data.habits.find(function(x){ return x.id===hid; });
+      if(h){
+        if(h.history[day]) delete h.history[day];
+        else h.history[day] = true;
+        saveData(); renderHabits(); renderRing();
+        haptic(h.history[day] ? 'success' : 'light');
+      }
+      return;
+    }
+    var delHabit = e.target.closest('[data-action="delete-habit"]');
+    if(delHabit){
+      var hidd = delHabit.getAttribute('data-id');
+      data.habits = data.habits.filter(function(x){ return x.id !== hidd; });
+      saveData(); renderHabits(); renderRing();
+      haptic('light');
+      return;
+    }
+  });
+
+  /* ---------- add sheet ---------- */
+  var sheet = document.getElementById('sheet');
+  var backdrop = document.getElementById('backdrop');
+  var titleInput = document.getElementById('titleInput');
+  var dueInput = document.getElementById('dueInput');
+  var taskFields = document.getElementById('taskFields');
+  var sheetTitle = document.getElementById('sheetTitle');
+  var selectedPriority = 'low';
+
+  document.getElementById('prioRow').addEventListener('click', function(e){
+    var pill = e.target.closest('.pill');
+    if(!pill) return;
+    selectedPriority = pill.getAttribute('data-p');
+    document.querySelectorAll('#prioRow .pill').forEach(function(p){ p.classList.toggle('sel', p===pill); });
+  });
+
+  function openSheet(){
+    titleInput.value = '';
+    dueInput.value = '';
+    selectedPriority = 'low';
+    document.querySelectorAll('#prioRow .pill').forEach(function(p){ p.classList.toggle('sel', p.getAttribute('data-p')==='low'); });
+    taskFields.style.display = activeTab === 'tasks' ? 'block' : 'none';
+    sheetTitle.textContent = activeTab === 'tasks' ? 'New task' : 'New habit';
+    backdrop.classList.add('show');
+    sheet.classList.add('show');
+    setTimeout(function(){ titleInput.focus(); }, 250);
+  }
+  function closeSheet(){
+    backdrop.classList.remove('show');
+    sheet.classList.remove('show');
+    titleInput.blur();
+  }
+
+  document.getElementById('fab').addEventListener('click', function(){ haptic('light'); openSheet(); });
+  document.getElementById('cancelBtn').addEventListener('click', closeSheet);
+  backdrop.addEventListener('click', closeSheet);
+
+  document.getElementById('saveBtn').addEventListener('click', function(){
+    var title = titleInput.value.trim();
+    if(!title){
+      haptic('error');
+      titleInput.focus();
+      return;
+    }
+    if(activeTab === 'tasks'){
+      data.tasks.push({
+        id: uid(), title: title, priority: selectedPriority,
+        due: dueInput.value || null, done: false, createdAt: Date.now()
+      });
+      renderTasks();
+    } else {
+      data.habits.push({ id: uid(), title: title, createdAt: Date.now(), history: {} });
+      renderHabits();
+    }
+    saveData();
+    renderRing();
+    haptic('success');
+    closeSheet();
+  });
+
+  if(tg && tg.BackButton){
+    tg.onEvent('backButtonClicked', function(){
+      if(sheet.classList.contains('show')) closeSheet();
+    });
+  }
+
+  /* ---------- init ---------- */
+  buildRing();
+  loadData().then(renderAll);
+})();
+</script>
 </body>
 </html>
