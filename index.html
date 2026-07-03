@@ -137,6 +137,27 @@
   .hh-dot{width:8px; height:8px; border-radius:2px; background:var(--surface-2);}
   .hh-streak{font-family:var(--font-mono); font-size:11px; color:var(--hint); width:52px; text-align:right; flex-shrink:0;}
 
+  /* Journal */
+  .journal-card{background:var(--surface); border-radius:var(--radius); padding:14px 14px; border:1px solid var(--line); border-left:4px solid var(--accent); cursor:pointer;}
+  .journal-date{font-family:var(--font-mono); font-size:11px; color:var(--hint); margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;}
+  .journal-title{font-weight:600; font-size:14.5px; margin-bottom:3px;}
+  .journal-preview{font-size:13.5px; line-height:1.55; color:var(--hint); white-space:pre-wrap; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;}
+  .journal-card-actions{display:flex; justify-content:flex-end; gap:4px; margin-top:8px;}
+
+  .journal-editor{
+    position:fixed; inset:0; background:var(--bg); z-index:20; display:flex; flex-direction:column;
+    transform:translateY(105%); transition:transform .28s cubic-bezier(.32,.72,0,1);
+  }
+  .journal-editor.show{transform:translateY(0);}
+  .je-header{display:flex; align-items:center; justify-content:space-between; padding:calc(14px + env(safe-area-inset-top)) 18px 12px; border-bottom:1px solid var(--line); flex-shrink:0;}
+  .je-header button{background:none; border:none; font-size:15px; font-weight:600; cursor:pointer; padding:6px 2px;}
+  .je-cancel{color:var(--hint);}
+  .je-save{color:var(--accent);}
+  .je-title{font-family:var(--font-display); font-weight:600; font-size:15px;}
+  .je-date{font-family:var(--font-mono); font-size:11px; color:var(--hint); padding:12px 18px 0; flex-shrink:0;}
+  .je-textarea{flex:1; border:none; background:transparent; color:var(--ink); font-family:var(--font-body); font-size:16px; line-height:1.7; padding:12px 18px; resize:none; outline:none; width:100%;}
+  .je-footer{padding:8px 18px calc(10px + env(safe-area-inset-bottom)); font-family:var(--font-mono); font-size:10.5px; color:var(--hint); display:flex; justify-content:space-between; flex-shrink:0; border-top:1px solid var(--line);}
+
   /* Sheet */
   .backdrop{position:fixed; inset:0; background:rgba(10,12,16,0.45); opacity:0; pointer-events:none; transition:.2s ease; z-index:10;}
   .backdrop.show{opacity:1; pointer-events:auto;}
@@ -205,6 +226,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
       <span>Habits</span>
     </div>
+    <div class="tab" data-tab="journal">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      <span>Journal</span>
+    </div>
     <div class="tab" data-tab="history">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
       <span>History</span>
@@ -217,6 +242,10 @@
 
   <section id="habitsSection">
     <div class="list" id="habitsList"></div>
+  </section>
+
+  <section id="journalSection">
+    <div class="list" id="journalList"></div>
   </section>
 
   <section id="historySection">
@@ -269,6 +298,17 @@
     <button class="btn btn-cancel" id="cancelBtn">Cancel</button>
     <button class="btn btn-save" id="saveBtn">Save</button>
   </div>
+</div>
+
+<div class="journal-editor" id="journalEditor">
+  <div class="je-header">
+    <button class="je-cancel" id="jeCancel">Cancel</button>
+    <span class="je-title" id="jeTitle">New entry</span>
+    <button class="je-save" id="jeSave">Save</button>
+  </div>
+  <div class="je-date" id="jeDate"></div>
+  <textarea class="je-textarea" id="jeTextarea" placeholder="Write whatever's on your mind — an idea, a plan, a reflection on your day. There's no wrong way to fill this page."></textarea>
+  <div class="je-footer"><span id="jeCount">0 words</span><span>Autosaves nothing — tap Save when you're done</span></div>
 </div>
 
 <script>
@@ -350,7 +390,7 @@
     }
   };
 
-  var data = { tasks: [], habits: [] };
+  var data = { tasks: [], habits: [], journal: [] };
 
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
   function fmtKey(d){
@@ -369,6 +409,7 @@
       }
       if(!data.tasks) data.tasks = [];
       if(!data.habits) data.habits = [];
+      if(!data.journal) data.journal = [];
       data.habits.forEach(function(h, i){ if(!h.color) h.color = HABIT_COLORS[i % HABIT_COLORS.length]; });
     });
   }
@@ -515,7 +556,37 @@
     }).join('');
   }
 
-  /* ---------- history ---------- */
+  /* ---------- journal ---------- */
+  function deriveTitle(text){
+    var firstLine = text.split('\n')[0].trim();
+    if(firstLine.length > 64) firstLine = firstLine.slice(0,64) + '…';
+    return firstLine || 'Untitled entry';
+  }
+  function renderJournal(){
+    var list = document.getElementById('journalList');
+    if(data.journal.length === 0){
+      list.innerHTML = '<div class="empty"><p class="e-title">A blank page</p><p class="e-body">Tap the + button and write down whatever\'s on your mind — no structure required.</p></div>';
+      return;
+    }
+    var sorted = data.journal.slice().sort(function(a,b){ return b.createdAt - a.createdAt; });
+    list.innerHTML = sorted.map(function(j){
+      var d = new Date(j.createdAt);
+      var dateLabel = d.toLocaleDateString(undefined, {month:'short', day:'numeric', year: d.getFullYear()!==TODAY.getFullYear() ? 'numeric' : undefined}) + ' · ' + d.toLocaleTimeString(undefined, {hour:'numeric', minute:'2-digit'});
+      var lines = j.text.split('\n');
+      var title = deriveTitle(j.text);
+      var body = lines.slice(1).join('\n').trim() || (lines.length <= 1 ? '' : '');
+      var preview = body || (lines.length === 1 ? '' : j.text);
+      return '<div class="journal-card" data-action="open-journal" data-id="'+j.id+'">'
+        + '<div class="journal-date"><span>'+dateLabel+'</span>'
+        + '<button class="del" data-action="delete-journal" data-id="'+j.id+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M9 6V4h6v2m-8 0l1 14h8l1-14"/></svg></button>'
+        + '</div>'
+        + '<div class="journal-title">'+escapeHtml(title)+'</div>'
+        + (preview ? '<div class="journal-preview">'+escapeHtml(preview)+'</div>' : '')
+        + '</div>';
+    }).join('');
+  }
+
+
   function activityMap(){
     var map = {};
     data.tasks.forEach(function(t){
@@ -528,6 +599,10 @@
       Object.keys(h.history).forEach(function(k){
         if(h.history[k]) map[k] = (map[k]||0) + 1;
       });
+    });
+    data.journal.forEach(function(j){
+      var k = fmtKey(new Date(j.createdAt));
+      map[k] = (map[k]||0) + 1;
     });
     return map;
   }
@@ -630,6 +705,7 @@
     renderHeader();
     renderTasks();
     renderHabits();
+    renderJournal();
     renderHistory();
     renderRing();
   }
@@ -642,6 +718,7 @@
       document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('active', t===el); });
       document.getElementById('tasksSection').classList.toggle('active', activeTab==='tasks');
       document.getElementById('habitsSection').classList.toggle('active', activeTab==='habits');
+      document.getElementById('journalSection').classList.toggle('active', activeTab==='journal');
       document.getElementById('historySection').classList.toggle('active', activeTab==='history');
       document.getElementById('fab').style.display = activeTab === 'history' ? 'none' : 'flex';
       if(activeTab === 'history') renderHistory();
@@ -697,6 +774,19 @@
       haptic('light');
       return;
     }
+    var delJ = e.target.closest('[data-action="delete-journal"]');
+    if(delJ){
+      var jidd = delJ.getAttribute('data-id');
+      data.journal = data.journal.filter(function(x){ return x.id !== jidd; });
+      saveData(); renderJournal();
+      haptic('light');
+      return;
+    }
+    var openJ = e.target.closest('[data-action="open-journal"]');
+    if(openJ){
+      openJournalEditor(openJ.getAttribute('data-id'));
+      return;
+    }
   });
 
   /* ---------- add sheet ---------- */
@@ -735,7 +825,11 @@
     titleInput.blur();
   }
 
-  document.getElementById('fab').addEventListener('click', function(){ haptic('light'); openSheet(); });
+  document.getElementById('fab').addEventListener('click', function(){
+    haptic('light');
+    if(activeTab === 'journal'){ openJournalEditor(null); }
+    else { openSheet(); }
+  });
   document.getElementById('cancelBtn').addEventListener('click', closeSheet);
   backdrop.addEventListener('click', closeSheet);
 
@@ -766,8 +860,66 @@
   if(tg && tg.BackButton){
     tg.onEvent('backButtonClicked', function(){
       if(sheet.classList.contains('show')) closeSheet();
+      if(journalEditor.classList.contains('show')) closeJournalEditor();
     });
   }
+
+  /* ---------- journal editor ---------- */
+  var journalEditor = document.getElementById('journalEditor');
+  var jeTextarea = document.getElementById('jeTextarea');
+  var jeDate = document.getElementById('jeDate');
+  var jeTitleEl = document.getElementById('jeTitle');
+  var jeCount = document.getElementById('jeCount');
+  var editingJournalId = null;
+
+  function updateWordCount(){
+    var text = jeTextarea.value.trim();
+    var words = text.length ? text.split(/\s+/).length : 0;
+    jeCount.textContent = words + ' word' + (words === 1 ? '' : 's');
+  }
+  jeTextarea.addEventListener('input', updateWordCount);
+
+  function openJournalEditor(id){
+    editingJournalId = id;
+    if(id){
+      var entry = data.journal.find(function(x){ return x.id === id; });
+      jeTextarea.value = entry ? entry.text : '';
+      jeTitleEl.textContent = 'Edit entry';
+      jeDate.textContent = entry ? new Date(entry.createdAt).toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'}) : '';
+    } else {
+      jeTextarea.value = '';
+      jeTitleEl.textContent = 'New entry';
+      jeDate.textContent = TODAY.toLocaleDateString(undefined, {weekday:'long', month:'long', day:'numeric'});
+    }
+    updateWordCount();
+    journalEditor.classList.add('show');
+    setTimeout(function(){ jeTextarea.focus(); }, 280);
+  }
+  function closeJournalEditor(){
+    journalEditor.classList.remove('show');
+    jeTextarea.blur();
+    editingJournalId = null;
+  }
+  document.getElementById('jeCancel').addEventListener('click', function(){ haptic('light'); closeJournalEditor(); });
+  document.getElementById('jeSave').addEventListener('click', function(){
+    var text = jeTextarea.value.trim();
+    if(!text){
+      haptic('error');
+      jeTextarea.focus();
+      return;
+    }
+    if(editingJournalId){
+      var entry = data.journal.find(function(x){ return x.id === editingJournalId; });
+      if(entry){ entry.text = text; entry.updatedAt = Date.now(); }
+    } else {
+      data.journal.push({ id: uid(), text: text, createdAt: Date.now(), updatedAt: Date.now() });
+    }
+    saveData();
+    renderJournal();
+    renderHistory();
+    haptic('success');
+    closeJournalEditor();
+  });
 
   /* ---------- init ---------- */
   buildRing();
